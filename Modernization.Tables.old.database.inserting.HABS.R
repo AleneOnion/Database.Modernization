@@ -108,7 +108,7 @@ write.csv(newhabs,file="habs_to_add_to_habs_table.csv", na = "", quote = TRUE, r
 
 
 
-
+rm(list=setdiff(ls(), "data"))
 
 
 
