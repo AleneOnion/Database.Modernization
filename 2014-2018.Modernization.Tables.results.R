@@ -8,8 +8,9 @@
 
 
 #Alene Onion
-#Feb 2020
+#Oct 2020
 #Script to generate a clean lci downstream tables
+#2014-2018
 
 ####################################################################################################
 #Reading in Data tables

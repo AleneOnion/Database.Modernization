@@ -4,6 +4,8 @@
 #double quote output
 #write_csv(x, path, na = "", quote_escape = "double")
 
+#MM/DD/YYYY or MM/DD/YYYY HH24:MI
+
 
 #Alene Onion
 #Feb 2020
@@ -12,6 +14,7 @@
 ####################################################################################################
 ####################################################################################################
 #LCI field table
+rm(list=setdiff(ls(), "data"))
 
 sei<-read.csv("//dec-home/DEC_HOME/amonion/Lakes.Database/data/2019/ITS.fixed.tables/sample_event_information.csv",na.strings=c("","NA"), stringsAsFactors=FALSE)
 sei<-sei %>% 
@@ -70,6 +73,65 @@ field<-field %>%
          LCIFD_LMAS_SAMPLER,LCIFD_WEATHER_CURRENT_PRECIP,LCIFD_FOREST,LCIFD_BARE_GROUND,LCIFD_HAB_PRESENCE_IND,
          LCIFD_WEATHER_WIND,LCIFD_GRASS,LCIFD_SHORELINE_MODS,LCIFD_MAX_SOUND_DEPTH,LCIFD_SHRUB,LCIFD_DEVELOPMENT,LCIFD_SITE_SOUND_DEPTH) %>% 
   distinct()
+field<-field %>% 
+  mutate(LCIFD_USER_PERCEPT_PHYS_COND=ifelse((LCIFD_LOCATION_HISTORY_ID=="1702SHE1087_DH")&(LCIFD_EVENT_LMAS_SAMPLE_DATE=="2019-09-10"),5,LCIFD_USER_PERCEPT_PHYS_COND))
+
+#add fields for which we do not yet have data
+field<-field %>% 
+  mutate(LCIFD_BOTTOM_WATER_ODOR_IND=NA,
+         LCIFD_SECCHI_BOTTOM_IND=NA,
+         LCIFD_USER_PERCPT_PHYS_CND_CDE=NA,
+         LCIFD_EMERGENT_FLOATING_COVERG=NA,
+         LCIFD_SUBMERGENT_COVERAGE=NA,
+         LCIFD_MACROPHTYE_DENSITY=NA,
+         LCIFD_PRISTINE=NA,
+         LCIFD_APPEALING=NA,
+         LCIFD_ECOLOGICAL_INTEGRITY=NA,
+         LCIFD_QAUL_TROPHIC_STATUS=NA,
+         LCIFD_RECREATIONAL_VALUE=NA,
+         LCIFD_RESIDENCES=NA,
+         LCIFD_MAINTAINED_LAWNS=NA,
+         LCIFD_CONSTRUCTION=NA,
+         LCIFD_PIPES_DRAINS=NA,
+         LCIFD_DUMPING=NA,
+         LCIFD_ROADS=NA,
+         LCIFD_BRIDGES_CAUSEWAYS=NA,
+         LCIFD_SEWAGE_TREATMENT=NA,
+         LCIFD_HIKING_TRAILS=NA,
+         LCIFD_PARKS_CAMPGROUNDS=NA,
+         LCIFD_PRIMITIVE_PARKS_CAMPING=NA,
+         LCIFD_RESORTS=NA,
+         LCIFD_MARINAS=NA,
+         LCIFD_TRASH_LITTER=NA,
+         LCIFD_SURFACE_FILM_SCUM_SLICK=NA,
+         LCIFD_CROPLAND=NA,
+         LCIFD_PASTURE=NA,
+         LCIFD_LIVESTOCK=NA,
+         LCIFD_ORCHARD=NA,
+         LCIFD_POULTRY=NA,
+         LCIFD_FEEDLOT=NA,
+         LCIFD_WATER_WITHDRAWL=NA,
+         LCIFD_INDUSTRIAL_PLANTS=NA,
+         LCIFD_MINE_QUARRY=NA,
+         LCIFD_OIL_GAS_EXT=NA,
+         LCIFD_POWER_PLANT=NA,
+         LCIFD_LOGGING=NA,
+         LCIFD_FIRE=NA,
+         LCIFD_ODORS=NA,
+         LCIFD_COMMERCIAL=NA,
+         LCIFD_LIMING=NA,
+         LCIFD_CHEMICAL_TREAT=NA,
+         LCIFD_DRINKING_WATER_TREAT=NA,
+         LCIFD_ANGLING_PRESS=NA,
+         LCIFD_MACROPHTYE_CONTROL=NA,
+         LCIFD_WATER_LVL_FLUCTUATION=NA,
+         LCIFD_FISH_STOCK=NA,
+         LCIFD_HYDRO_LAKE_TYPE=NA,
+         LCIFD_OUTLET_DAMS=NA,
+         LCIFD_SWIMABILITY=NA,
+         LCIFD_LAKE_LVL_CHANGES=NA)
+
+
 write.csv(field,file="//dec-home/DEC_HOME/amonion/Lakes.Database/data/2019/ITS.fixed.tables/lci.field.csv", na = "", quote = TRUE, row.names = FALSE)
 
 #check tables merge with upstream tables
@@ -116,8 +178,12 @@ junk1<-junk %>% filter(is.na(event))
 junk<-junk %>% filter(is.na(LCIFD_SAMPLE_TYPE))
 
 #check for fields with NA records
-#only these fields should have NA: "LCIFD_COMMENT"               "LCIFD_MOTORBOAT_DENSITY"      "LCIFD_USER_PERCEPT_PHYS_COND" 
+#only these fields should have NA: "LCIFD_COMMENT"               "LCIFD_MOTORBOAT_DENSITY"   
 colnames(field)[colSums(is.na(field)) > 0]
+
+
+
+
 
 rm(list=setdiff(ls(), "data"))
 ####################################################################################################
@@ -145,6 +211,7 @@ rm(list=setdiff(ls(), "data"))
 #field data
 #Check that file returned from ITS matches
 #check that lakes table matches its
+rm(list=setdiff(ls(), "data"))
 field<-read.csv("//dec-home/DEC_HOME/amonion/Lakes.Database/data/2019/ITS.fixed.tables/lci.field.csv",na.strings=c("","NA"), stringsAsFactors=FALSE)
 ITS<-read.csv("//dec-home/DEC_HOME/amonion/Lakes.Database/data/2019/ITS.fixed.tables/ITS/L_LCI_FIELD_DATA.csv",na.strings=c("","NA"), stringsAsFactors=FALSE)
 library(dplyr)
@@ -153,7 +220,7 @@ library(tidyr)
 #truncate to necessary fields
 ITS<-ITS %>% 
   select(LCIFD_LOCATION_HISTORY_ID,LCIFD_EVENT_LMAS_SAMPLE_DATE,LCIFD_EVENT_LMAS_DATA_PROVIDER,
-         LCIFD_SAMPLE_TYPE,LCIFD_INFORMATION_TYPE,
+         LCIFD_SAMPLE_TYPE,
          LCIFD_GLOBAL_ID,LCIFD_WEATHER_48HR_PRECIP,LCIFD_WETLAND,LCIFD_LOW_ELEV_FLIGHT_HAZ_IND,LCIFD_SAMPLE_LONG,
          LCIFD_OTHER_SAMPLER,LCIFD_COMMENT,LCIFD_BEACH,LCIFD_USER_PERCEPT_RECREATION,LCIFD_SAMPLE_LAT,
          LCIFD_WEATHER_CURRENT_COND,LCIFD_MOTORBOAT_DENSITY,LCIFD_AGRICULTURE,LCIFD_USER_PERCEPT_PHYS_COND,
@@ -161,8 +228,7 @@ ITS<-ITS %>%
          LCIFD_WEATHER_WIND,LCIFD_GRASS,LCIFD_SHORELINE_MODS,LCIFD_MAX_SOUND_DEPTH,LCIFD_SHRUB,LCIFD_DEVELOPMENT,LCIFD_SITE_SOUND_DEPTH)
 field<-field %>% 
   select(LCIFD_LOCATION_HISTORY_ID,LCIFD_EVENT_LMAS_SAMPLE_DATE,LCIFD_EVENT_LMAS_DATA_PROVIDER,
-       LCIFD_SAMPLE_TYPE,LCIFD_INFORMATION_TYPE,
-       LCIFD_GLOBAL_ID,LCIFD_WEATHER_48HR_PRECIP,LCIFD_WETLAND,LCIFD_LOW_ELEV_FLIGHT_HAZ_IND,LCIFD_SAMPLE_LONG,
+       LCIFD_SAMPLE_TYPE,LCIFD_GLOBAL_ID,LCIFD_WEATHER_48HR_PRECIP,LCIFD_WETLAND,LCIFD_LOW_ELEV_FLIGHT_HAZ_IND,LCIFD_SAMPLE_LONG,
        LCIFD_OTHER_SAMPLER,LCIFD_COMMENT,LCIFD_BEACH,LCIFD_USER_PERCEPT_RECREATION,LCIFD_SAMPLE_LAT,
        LCIFD_WEATHER_CURRENT_COND,LCIFD_MOTORBOAT_DENSITY,LCIFD_AGRICULTURE,LCIFD_USER_PERCEPT_PHYS_COND,
        LCIFD_LMAS_SAMPLER,LCIFD_WEATHER_CURRENT_PRECIP,LCIFD_FOREST,LCIFD_BARE_GROUND,LCIFD_HAB_PRESENCE_IND,
@@ -187,7 +253,7 @@ sapply(ITS,class)
 #make sure samples sorted the same
 ITS<-ITS %>% 
   arrange(LCIFD_LOCATION_HISTORY_ID,LCIFD_EVENT_LMAS_SAMPLE_DATE,LCIFD_EVENT_LMAS_DATA_PROVIDER,
-          LCIFD_SAMPLE_TYPE,LCIFD_INFORMATION_TYPE,
+          LCIFD_SAMPLE_TYPE,
           LCIFD_GLOBAL_ID,LCIFD_WEATHER_48HR_PRECIP,LCIFD_WETLAND,LCIFD_LOW_ELEV_FLIGHT_HAZ_IND,LCIFD_SAMPLE_LONG,
           LCIFD_OTHER_SAMPLER,LCIFD_COMMENT,LCIFD_BEACH,LCIFD_USER_PERCEPT_RECREATION,LCIFD_SAMPLE_LAT,
           LCIFD_WEATHER_CURRENT_COND,LCIFD_MOTORBOAT_DENSITY,LCIFD_AGRICULTURE,LCIFD_USER_PERCEPT_PHYS_COND,
@@ -196,7 +262,7 @@ ITS<-ITS %>%
 rownames(ITS)<-NULL
 field<-field %>% 
   arrange(LCIFD_LOCATION_HISTORY_ID,LCIFD_EVENT_LMAS_SAMPLE_DATE,LCIFD_EVENT_LMAS_DATA_PROVIDER,
-          LCIFD_SAMPLE_TYPE,LCIFD_INFORMATION_TYPE,
+          LCIFD_SAMPLE_TYPE,
           LCIFD_GLOBAL_ID,LCIFD_WEATHER_48HR_PRECIP,LCIFD_WETLAND,LCIFD_LOW_ELEV_FLIGHT_HAZ_IND,LCIFD_SAMPLE_LONG,
           LCIFD_OTHER_SAMPLER,LCIFD_COMMENT,LCIFD_BEACH,LCIFD_USER_PERCEPT_RECREATION,LCIFD_SAMPLE_LAT,
           LCIFD_WEATHER_CURRENT_COND,LCIFD_MOTORBOAT_DENSITY,LCIFD_AGRICULTURE,LCIFD_USER_PERCEPT_PHYS_COND,
@@ -213,13 +279,13 @@ test <- lapply(names(field), function(name.i){
   anti_join(field, ITS, by = name.i)
 })
 names(test) <- names(field)
-test
+#test
 
 
 test2 <- lapply(names(ITS), function(name.i){
   anti_join(ITS, field, by = name.i)
 })
 names(test2) <- names(ITS)
-test2
+#test2
 
 rm(list=c('field','ITS','test','test2'))

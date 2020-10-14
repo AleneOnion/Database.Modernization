@@ -490,6 +490,7 @@ lengths<-location %>%
 #####################################################################################################################
 #Check that file returned from ITS matches
 #check that lakes table matches its
+rm(list=setdiff(ls(), "data"))
 location<-read.csv("//dec-home/DEC_HOME/amonion/Lakes.Database/data/2019/ITS.fixed.tables/location.csv",na.strings=c("","NA"), stringsAsFactors=FALSE)
 ITS<-read.csv("//dec-home/DEC_HOME/amonion/Lakes.Database/data/2019/ITS.fixed.tables/ITS/L_LOCATION.csv",na.strings=c("","NA"), stringsAsFactors=FALSE)
 library(dplyr)
@@ -498,7 +499,7 @@ library(tidyr)
 #truncate to necessary fields
 ITS<-ITS %>% 
   select(LAKE_HISTORY_ID,LOCATION_HISTORY_ID,LOCATION_NAME,LOCATION_TYPE,LOCATION_X_COORDINATE,LOCATION_Y_COORDINATE,
-         LOCATION_HORIZONTAL_METHOD,LOCATION_HORIZONTAL_DATUM)
+         LOCATION_HORIZONTAL_METHOD,LOCATION_HORIZONTAL_DATUM) 
 location<-location %>% 
   rename(LAKE_HISTORY_ID=LAKE_ID,
          LOCATION_HISTORY_ID=LOCATION_ID,

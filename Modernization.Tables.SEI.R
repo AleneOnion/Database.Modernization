@@ -4,6 +4,8 @@
 #double quote output
 #write_csv(x, path, na = "", quote_escape = "double")
 
+#MM/DD/YYYY or MM/DD/YYYY HH24:MI
+
 
 #Alene Onion
 #Feb 2020
@@ -11,6 +13,7 @@
 
 ####################################################################################################
 #Read in Data tables first
+rm(list=setdiff(ls(), "data"))
 head(data)
 
 ####################################################################################################
@@ -103,7 +106,7 @@ cslap<-merge(cslap,cslap2,by=c('SAMPLE_NAME','LAKE_NAME','SAMPLE_DATE','INFO_TYP
 rm(cslap2)
 #fix incorrect info_types
 cslap<-cslap %>% 
-  mutate(INFO_TYPE=ifelse(SAMPLE_NAME %in% c('19-115.1-11','19-115.1-12','19-115.1-13','19-115.1-14','19-115.1-15','19-115.1-16','19-115.1-17','19-115.1-18'),"SD",INFO_TYPE))
+  mutate(INFO_TYPE=ifelse(SAMPLE_NAME %in% c('19-115.1-01','19-115.1-02','19-115.1-03','19-115.1-04','19-115.1-05','19-115.1-06','19-115.1-07','19-115.1-08')&is.na(TIME),"SD",INFO_TYPE))
 SEI<-read.csv("//dec-home/DEC_HOME/amonion/Lakes.Database/data/2019/ITS.fixed.tables/lci.only.tables/sample_event_information.csv",na.strings=c("","NA"), stringsAsFactors=FALSE)
 event<-read.csv("//dec-home/DEC_HOME/amonion/Lakes.Database/data/2019/ITS.fixed.tables/event.csv",na.strings=c("","NA"), stringsAsFactors=FALSE)
 event<-event %>% rename(SEI_LOCATION_HISTORY_ID=EVENT_LMAS_LOCATION_HISTORY_ID,
@@ -134,6 +137,11 @@ cslap<-cslap %>%
   select(SEI_LOCATION_HISTORY_ID,SEI_EVENT_LMAS_SAMPLE_DATE,SEI_EVENT_LMAS_DATA_PROVIDER,SEI_SAMPLE_TYPE,SEI_INFORMATION_TYPE,SEI_SAMPLE_NAME,SEI_SAMPLE_ID,SEI_PURPOSE) %>% 
   distinct()
 cslap<-merge(cslap,event,all.x=TRUE)
+#now make sure only one time is associated with these sample: 19-254.1-B2, 19-254.1-B3
+#This is the only record that has two times for one sample date which is why the merge doesn't work correctly
+cslap<-cslap %>% 
+  filter(!(SEI_SAMPLE_NAME=="19-254.1-B2"&SEI_EVENT_LMAS_SAMPLE_TIME=="2019-08-21 00:01:00"),
+         !(SEI_SAMPLE_NAME=="19-254.1-B3"&SEI_EVENT_LMAS_SAMPLE_TIME=="2019-08-21 00:00:00"))
 SEI<-SEI %>% 
   select(SEI_LOCATION_HISTORY_ID,SEI_EVENT_LMAS_SAMPLE_DATE,SEI_EVENT_LMAS_DATA_PROVIDER,SEI_EVENT_LMAS_SAMPLE_TIME,SEI_SAMPLE_TYPE,SEI_INFORMATION_TYPE,SEI_SAMPLE_NAME,SEI_SAMPLE_ID,SEI_PURPOSE) %>% 
   mutate(SEI_EVENT_LMAS_SAMPLE_DATE=as.Date(SEI_EVENT_LMAS_SAMPLE_DATE,format="%Y-%m-%d"))
@@ -166,8 +174,8 @@ event<-event %>% rename(SEI_LOCATION_HISTORY_ID=EVENT_LMAS_LOCATION_HISTORY_ID,
 
 habs<-habs %>% 
   rename(SEI_LOCATION_HISTORY_ID=LOCATION_HISTORY_ID,
-         SEI_EVENT_LMAS_SAMPLE_DATE=SAMPLE_DATE,
-         SEI_EVENT_LMAS_DATA_PROVIDER=DATA_PROVIDER,
+         SEI_EVENT_LMAS_SAMPLE_DATE=LMAS_SAMPLE_DATE,
+         SEI_EVENT_LMAS_DATA_PROVIDER=LMAS_DATA_PROVIDER,
          SEI_SAMPLE_TYPE=SAMPLE_TYPE,
          SEI_SAMPLE_NAME=HFD_SAMPLE_NAME,
          SEI_PURPOSE=PURPOSE,
@@ -268,14 +276,6 @@ check<-SEI %>%
   filter(n>1) %>% 
   distinct()
 
-###NOTE####
-#you have to do this before sending to Cindy:
-#•    Open your spreadsheet 
-#•    Create a new column 
-#•    Format it as text 
-#•    Copy and paste the data into the new column 
-#•    Delete the old column 
-#•    Save the file as Excel  
 
 rm(list=setdiff(ls(), "data"))
 ####################################################################################################
@@ -302,17 +302,17 @@ library(tidyr)
 
 #truncate to necessary fields
 ITS<-ITS %>% 
-  select(SEI_SEI_LOCATION_HISTORY_ID,
-         SEI_SEI_EVENT_LMAS_SAMPLE_DATE,
-         SEI_SEI_EVENT_LMAS_DATA_PROVIDER,
+  select(SEI_LOCATION_HISTORY_ID,
+         SEI_EVENT_LMAS_SAMPLE_DATE,
+         SEI_EVENT_LMAS_DATA_PROVIDER,
          SEI_SAMPLE_TYPE,
          SEI_INFORMATION_TYPE,
          SEI_SAMPLE_NAME,
          SEI_PURPOSE)
 SEI<-SEI %>% 
-  select(SEI_SEI_LOCATION_HISTORY_ID,
-         SEI_SEI_EVENT_LMAS_SAMPLE_DATE,
-         SEI_SEI_EVENT_LMAS_DATA_PROVIDER,
+  select(SEI_LOCATION_HISTORY_ID,
+         SEI_EVENT_LMAS_SAMPLE_DATE,
+         SEI_EVENT_LMAS_DATA_PROVIDER,
          SEI_SAMPLE_TYPE,
          SEI_INFORMATION_TYPE,
          SEI_SAMPLE_NAME,
@@ -320,9 +320,9 @@ SEI<-SEI %>%
 
 #format as dates so can compare
 SEI<-SEI %>% 
-  mutate(SEI_SEI_EVENT_LMAS_SAMPLE_DATE=as.Date(SEI_SEI_EVENT_LMAS_SAMPLE_DATE,format="%Y-%m-%d"))
+  mutate(SEI_EVENT_LMAS_SAMPLE_DATE=as.Date(SEI_EVENT_LMAS_SAMPLE_DATE,format="%Y-%m-%d"))
 ITS<-ITS %>% 
-  mutate(SEI_SEI_EVENT_LMAS_SAMPLE_DATE=as.Date(SEI_SEI_EVENT_LMAS_SAMPLE_DATE,format="%m/%d/%Y"))
+  mutate(SEI_EVENT_LMAS_SAMPLE_DATE=as.Date(SEI_EVENT_LMAS_SAMPLE_DATE,format="%m/%d/%Y"))
 
 #check class
 sapply(SEI,class)
@@ -330,18 +330,18 @@ sapply(ITS,class)
 
 #make sure samples sorted the same
 ITS<-ITS %>% 
-  arrange(SEI_SEI_LOCATION_HISTORY_ID,
-          SEI_SEI_EVENT_LMAS_SAMPLE_DATE,
-          SEI_SEI_EVENT_LMAS_DATA_PROVIDER,
+  arrange(SEI_LOCATION_HISTORY_ID,
+          SEI_EVENT_LMAS_SAMPLE_DATE,
+          SEI_EVENT_LMAS_DATA_PROVIDER,
           SEI_SAMPLE_TYPE,
           SEI_INFORMATION_TYPE,
           SEI_SAMPLE_NAME,
           SEI_PURPOSE)
 rownames(ITS)<-NULL
 SEI<-SEI %>% 
-  arrange(SEI_SEI_LOCATION_HISTORY_ID,
-          SEI_SEI_EVENT_LMAS_SAMPLE_DATE,
-          SEI_SEI_EVENT_LMAS_DATA_PROVIDER,
+  arrange(SEI_LOCATION_HISTORY_ID,
+          SEI_EVENT_LMAS_SAMPLE_DATE,
+          SEI_EVENT_LMAS_DATA_PROVIDER,
           SEI_SAMPLE_TYPE,
           SEI_INFORMATION_TYPE,
           SEI_SAMPLE_NAME,
@@ -357,11 +357,11 @@ test <- lapply(names(SEI), function(name.i){
   anti_join(SEI, ITS, by = name.i)
 })
 names(test) <- names(SEI)
-test
+#test
 
 
 test2 <- lapply(names(ITS), function(name.i){
   anti_join(ITS, SEI, by = name.i)
 })
 names(test2) <- names(ITS)
-test2
+#test2

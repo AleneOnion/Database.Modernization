@@ -2,6 +2,9 @@
 #Feb 2020
 #Script to generate a clean lci downstream tables
 
+#MM/DD/YYYY or MM/DD/YYYY HH24:MI
+
+rm(list=setdiff(ls(), "data"))
 ####################################################################################################
 ####################################################################################################
 #Read in Data tables first
@@ -106,8 +109,12 @@ cslap<-cslap %>%
   filter(!SAMPLE_NAME %in% c('19-182.3-11','19-182.3-12','19-182.3-14'),
          !is.na(EVENT_LMAS_LOCATION_HISTORY_ID)) %>% 
   select(EVENT_LMAS_LOCATION_HISTORY_ID,EVENT_LMAS_SAMPLE_DATE,EVENT_LMAS_DATA_PROVIDER,EVENT_LMAS_SAMPLE_TIME) %>% 
+  distinct() %>% 
   arrange(desc(EVENT_LMAS_SAMPLE_TIME)) %>% 
-  distinct(EVENT_LMAS_LOCATION_HISTORY_ID,EVENT_LMAS_SAMPLE_DATE,EVENT_LMAS_DATA_PROVIDER,.keep_all = TRUE) 
+  distinct(EVENT_LMAS_LOCATION_HISTORY_ID,EVENT_LMAS_SAMPLE_DATE,EVENT_LMAS_DATA_PROVIDER,.keep_all = TRUE) %>% 
+#add back in the one sample that should have a different time for sample "19-254.1-B3"
+  add_row(EVENT_LMAS_LOCATION_HISTORY_ID = as.character("0402HEM0044_CSL1"), EVENT_LMAS_SAMPLE_DATE =as.Date("2019-08-21"),EVENT_LMAS_DATA_PROVIDER=as.character("CSL"),EVENT_LMAS_SAMPLE_TIME=as.character("2019-08-21 00:01:00"))
+  
 event<-event %>% 
   mutate(EVENT_LMAS_SAMPLE_DATE=as.Date(EVENT_LMAS_SAMPLE_DATE,format="%Y-%m-%d"))
 sapply(cslap,class)
@@ -135,9 +142,9 @@ event<-merge(event,event2,all=TRUE)
 rm(event2)
 
 habs<-habs %>% 
-  select(LOCATION_HISTORY_ID,SAMPLE_DATE,DATA_PROVIDER) %>% 
-  rename(EVENT_LMAS_SAMPLE_DATE=SAMPLE_DATE,
-         EVENT_LMAS_DATA_PROVIDER=DATA_PROVIDER,
+  select(LOCATION_HISTORY_ID,LMAS_SAMPLE_DATE,LMAS_DATA_PROVIDER) %>% 
+  rename(EVENT_LMAS_SAMPLE_DATE=LMAS_SAMPLE_DATE,
+         EVENT_LMAS_DATA_PROVIDER=LMAS_DATA_PROVIDER,
          EVENT_LMAS_LOCATION_HISTORY_ID=LOCATION_HISTORY_ID) %>% 
   mutate(EVENT_LMAS_SAMPLE_DATE=as.Date(EVENT_LMAS_SAMPLE_DATE,format="%Y-%m-%d"),
          EVENT_LMAS_LOCATION_HISTORY_ID=ifelse(EVENT_LMAS_LOCATION_HISTORY_ID=="1306WALXXX1_C","1306WALXXX1_ESOPUS",EVENT_LMAS_LOCATION_HISTORY_ID),
@@ -145,6 +152,9 @@ habs<-habs %>%
          EVENT_LMAS_DATA_PROVIDER=toupper(EVENT_LMAS_DATA_PROVIDER),
          EVENT_LMAS_SAMPLE_TIME=paste(EVENT_LMAS_SAMPLE_DATE,"00:00:00",sep=" ")) %>%
   select(EVENT_LMAS_LOCATION_HISTORY_ID,EVENT_LMAS_SAMPLE_DATE,EVENT_LMAS_DATA_PROVIDER,EVENT_LMAS_SAMPLE_TIME) %>% 
+  ####################################################################################################
+#removing one erroneous record. Need to fix this at the source instead. This should only be here temporarily
+  filter(EVENT_LMAS_LOCATION_HISTORY_ID!="1302KAT0107A_C") %>% 
   distinct()
   
 event<-event %>% 
@@ -237,14 +247,7 @@ check2<-event %>%
 
 rm(list=setdiff(ls(), "data"))
 
-###NOTE####
-#you have to do this before sending to Cindy:
-#•    Open your spreadsheet 
-#•    Create a new column 
-#•    Format it as text 
-#•    Copy and paste the data into the new column 
-#•    Delete the old column 
-#•    Save the file as Excel  
+
 
 
 #check ITS returned table
@@ -278,8 +281,16 @@ event<-event %>%
          EVENT_LMAS_SAMPLE_DATE=format(EVENT_LMAS_SAMPLE_DATE,"%m/%d/%Y"),
          EVENT_LMAS_SAMPLE_DATE=as.character(EVENT_LMAS_SAMPLE_DATE),
          EVENT_LMAS_DATA_PROVIDER=as.character(EVENT_LMAS_DATA_PROVIDER),
-         EVENT_LMAS_SAMPLE_TIME=as.character(EVENT_LMAS_SAMPLE_TIME))
-
+         EVENT_LMAS_SAMPLE_TIME=as.character(EVENT_LMAS_SAMPLE_TIME),
+         EVENT_LMAS_SAMPLE_TIME=sub(".*? ", "", EVENT_LMAS_SAMPLE_TIME),
+         junk=substr(EVENT_LMAS_SAMPLE_TIME,1,2),
+         junk=as.numeric(junk),
+         pm=ifelse(junk>11,"PM","AM"),
+         junk=ifelse(junk>12,junk-12,junk),
+         EVENT_LMAS_SAMPLE_TIME=substr(EVENT_LMAS_SAMPLE_TIME,3,8),
+         EVENT_LMAS_SAMPLE_TIME=paste(junk,EVENT_LMAS_SAMPLE_TIME,sep=""),
+         EVENT_LMAS_SAMPLE_TIME=paste(EVENT_LMAS_SAMPLE_DATE,EVENT_LMAS_SAMPLE_TIME,pm,sep=" ")) %>% 
+  select(EVENT_LMAS_LOCATION_HISTORY_ID,EVENT_LMAS_SAMPLE_DATE,EVENT_LMAS_DATA_PROVIDER,EVENT_LMAS_SAMPLE_TIME)
 
 #check class
 sapply(event,class)
@@ -304,11 +315,11 @@ test <- lapply(names(event), function(name.i){
   anti_join(event, ITS, by = name.i)
 })
 names(test) <- names(event)
-test
+#test
 
 
 test2 <- lapply(names(ITS), function(name.i){
   anti_join(ITS, event, by = name.i)
 })
 names(test2) <- names(ITS)
-test
+#test
